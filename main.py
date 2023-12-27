@@ -67,15 +67,18 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                     '<b>!norep30days</b> - Show users that have not recieved reputation in last 30 days\n'+
                                     '<b>!norep60days</b> - Show users that have not recieved reputation in last 60 days\n'
                                     , parse_mode='HTML')
+    
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-
-# Responses
-def handle_response(update: Update, text: str) -> str:
-    #Make all text lowercase so command is no longer case sensitive
-    processed: str = text.lower()
+    #Information variables of the message
+    chat_type: str = update.message.chat.type
+    chatid: int = update.message.chat_id
+    text: str = update.message.text
+    leave = False
 
     #Store information about original message user and replyer user
     userid = update.message.from_user.id
+    username = update.message.from_user.username
     firstname = update.message.from_user.first_name
     lastname = update.message.from_user.last_name
 
@@ -87,6 +90,31 @@ def handle_response(update: Update, text: str) -> str:
     else:
         message_is_reply = False
 
+    #This is a codeblock that runs every time a message is sent in chat
+
+    #If lastname is available but not yet in database, fill it in database
+    if pd.isnull(get_user_value(userid, 'lastname')) == True and lastname != None:
+        write_user_value(userid, 'lastname', firstname)
+        log(f'Lastname of user ({userid}) was not yet available in database, but available in telegram. Adding to database...')
+    
+    #If username is available but not yet in database, fill it in database
+    if pd.isnull(get_user_value(userid, 'username')) == True and username != None:
+        write_user_value(userid, 'username', username)
+        log(f'Username of user ({userid}) was not yet available in database, but available in telegram. Adding to database...')
+
+    #End of codeblock for always on tasks
+
+    #Logging of sent message
+    log(f'User {update.message.from_user.first_name} {update.message.from_user.last_name} with ID ({update.message.from_user.id}) and username ({update.message.from_user.username}) in {chat_type} {update.message.chat_id}: "{text}"')
+
+    #Check if bot usage allowed. If not, leave group
+    if chatid != allowed_chat_id and allowed_chat_id != False:
+        context.bot.send_message(chatid, "This is a private bot. You are not authorised to use this bot. Leaving chat..")
+        await app.bot.leave_chat(chatid)
+    
+    #Make all text lowercase so command is no longer case sensitive
+    processed: str = text.lower()
+
     if "!register" == processed:
         database = pd.read_csv(database_path)
 
@@ -95,28 +123,32 @@ def handle_response(update: Update, text: str) -> str:
             log(f'User with ID ({userid}) used !register command, and I did not know them yet. This is weird. Will add manually now..')
             database.loc[len(database.index)] = [userid, update.message.from_user.username, firstname, lastname, rank_names[0], 0, date.today(), 1]
             database.to_csv(database_path, index=False)
-            return "I did not see you before (maybe I was offline when you joined), but you are registered as of now."
+            await context.bot.send_message(chatid, "I did not see you before (maybe I was offline when you joined), but you are registered as of now.")
         else:
             #New member joined but already exists in database as left user, only change current_member state
             log(f'User with ID ({userid}) used !register command, and I already knew them.')
-            return "Registering normally happens automatically with no further user action required, like with you. You were already registered :)"   
+            await context.bot.send_message(chatid, "Registering normally happens automatically with no further user action required, like with you. You were already registered :)")   
 
     if '++' == processed:
         #Check if message is a reply to a user or a standalone message. If not, return error
         if message_is_reply == False:
-            return "You can only give reputation by replying to a message. Just sending '++' in the chat does not work"
+            await context.bot.send_message(chatid,"You can only give reputation by replying to a message. Just sending '++' in the chat does not work")
+            return
 
         #Check if original message sender is one of the bots. If so, disallow giving reputation
         if update.message.reply_to_message.from_user.is_bot:
-            return  "Thanks, but bots don't need reputation :)"
+            await context.bot.send_message(chatid,"Thanks, but bots don't need reputation :)")
+            return
         
         #Check if person who is giving karma is the same as recieving
         if userid == original_message_userid:
-            return "Giving yourself reputation is forbidden"
+            await context.bot.send_message(chatid,"Giving yourself reputation is forbidden")
+            return
         
         #Check if person who is recieving reputation is admin, if so, return simple string and don't affect karma and rank
         if original_message_userid in admins:
-            return f'<b>{firstname} {lastname or ""}</b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b>!'
+            await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""}</b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b>!')
+            return
         
         #Error checks passed
         #We are going to add 1 reputation to the user who the message originated from
@@ -156,16 +188,20 @@ def handle_response(update: Update, text: str) -> str:
         #If sender is admin, filter out reputation in reply
         if userid in admins:
             if rank_upgraded == False:
-                return f'<b>{firstname} {lastname or ""}</b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!'
+                await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""}</b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!')
+                return
             else:
-                return f'<b>{firstname} {lastname or ""} </b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!\n\nCongratulations! Because you reached {int(current_reputation) + 1} reputation, you have reached the rank of {rank_upgraded}!'
-
+                await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""} </b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!\n\nCongratulations! Because you reached {int(current_reputation) + 1} reputation, you have reached the rank of {rank_upgraded}!')
+                return
+        
         #If rank upgraded, send reputation + upgrade rank message, else only reputation message
         if rank_upgraded == False:
-            return f'<b>{firstname} {lastname or ""}</b> ({get_user_value(userid, "reputation")}) gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!'
+            await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""}</b> ({get_user_value(userid, "reputation")}) gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!')
+            return
         else:
-            return f'<b>{firstname} {lastname or ""} </b> ({get_user_value(userid, "reputation")}) gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!\n\nCongratulations! Because you reached {int(current_reputation) + 1} reputation, you have reached the rank of {rank_upgraded}!'
-    
+            await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""} </b> ({get_user_value(userid, "reputation")}) gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!\n\nCongratulations! Because you reached {int(current_reputation) + 1} reputation, you have reached the rank of {rank_upgraded}!')
+            return
+
     if '!top25' == processed:
 
         database = pd.read_csv(database_path)
@@ -186,7 +222,7 @@ def handle_response(update: Update, text: str) -> str:
            
             count = count + 1
 
-        return returnstring
+        await context.bot.send_message(chatid, returnstring)
     
     if '!top10' == processed:
         
@@ -210,7 +246,7 @@ def handle_response(update: Update, text: str) -> str:
            
             count = count + 1
 
-        return returnstring
+        await context.bot.send_message(chatid, returnstring)
             
     if '!bottom10' == processed:
         
@@ -232,49 +268,60 @@ def handle_response(update: Update, text: str) -> str:
            
             count = count + 1
 
-        return returnstring
+        await context.bot.send_message(chatid, returnstring)
     
     if '!mystats' == processed:
         #Check if message is a reply to a user or a standalone message. If not, return error
         if message_is_reply == True:
-            return "This command does not work in a reply. Please issue this command in a normal message."
+            await context.bot.send_message(chatid, "This command does not work in a reply. Please issue this command in a normal message.")
+            return
         
         #Check if user is in admins. If so, return nothing
         if userid in admins:
-            return "The stats of this user are hidden"
+            await context.bot.send_message(chatid, "The stats of this user are hidden")
+            return
 
-        return 'Your stats are:\n\n'+f'<b>Reputation:</b> {get_user_value(userid, "reputation")}\n<b>Rank:</b> {get_user_value(userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(userid, "last_recieved_reputation")}'
+        await context.bot.send_message(chatid, 'Your stats are:\n\n'+f'<b>Reputation:</b> {get_user_value(userid, "reputation")}\n<b>Rank:</b> {get_user_value(userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(userid, "last_recieved_reputation")}')
+        return
     
     if '!stats' == processed:
         #Check if message is a reply to a user or a standalone message. If not, return error
         if message_is_reply == False:
-            return "You can only get a users stats by replying to their message. Just sending '!getstats' in the chat does not work."
+            await context.bot.send_message(chatid, "You can only get a users stats by replying to their message. Just sending '!getstats' in the chat does not work.")
+            return
         
         if update.message.reply_to_message.from_user.is_bot:
-            return  "Bots don't have stats :)"
+            await context.bot.send_message(chatid, "Bots don't have stats :)")
+            return
         
         #Check if user is in admins. If so, return nothing
         if userid in admins:
-            return "The stats of this user are hidden"
+            await context.bot.send_message(chatid, "The stats of this user are hidden")
+            return
 
-        return 'The stats of the user you replied to are:\n\n'+f'<b>Reputation:</b> {get_user_value(original_message_userid, "reputation")}\n<b>Rank:</b> {get_user_value(original_message_userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(original_message_userid, "last_recieved_reputation")}'
+        await context.bot.send_message(chatid, 'The stats of the user you replied to are:\n\n'+f'<b>Reputation:</b> {get_user_value(original_message_userid, "reputation")}\n<b>Rank:</b> {get_user_value(original_message_userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(original_message_userid, "last_recieved_reputation")}')
+        return
     
     if '!setrep' in processed:
         #Setrep command to set reputation of users, so check if user is admin
         if userid not in admins:
-            return "Do not attempt to use commands you are unauthorised to. You will be warned or banned"
+            await context.bot.send_message(chatid, "Do not attempt to use commands you are unauthorised to. You will be warned or banned")
+            return
 
         #Check if message is a reply to a user or a standalone message. If not, return error
         if update.message.reply_to_message == None:
-            return "You can only set a users reputation by replying to their message. Just sending '!setrep' in the chat does not work."
+            await context.bot.send_message(chatid, "You can only set a users reputation by replying to their message. Just sending '!setrep' in the chat does not work.")
+            return
         
         #Check if user gave corrent number of arguments (1). If not, return error
         if len(update.message.text.split()) != 2 | (not update.message.text.split()[1].isdigit()):
-            return "Incorrect arguments for this command. Correct usage: ""!setrep [number]"" as a reply to a user"
+            await context.bot.send_message(chatid, "Incorrect arguments for this command. Correct usage: ""!setrep [number]"" as a reply to a user")
+            return
 
         #Check if user is trying to set reputation of bot. If so, return error
         if update.message.reply_to_message.from_user.is_bot:
-            return  "Bots don't have stats :)"
+            await context.bot.send_message(chatid,  "Bots don't have stats :)")
+            return
         
         #Checks passed. Execute setrep
         write_user_value(original_message_userid, 'reputation', update.message.text.split()[1])
@@ -308,12 +355,14 @@ def handle_response(update: Update, text: str) -> str:
             rank_upgraded = rank_names[0]
 
         #Send confirmation message in chat
-        return f'Staff set reputation of <b>{original_message_firstname} {original_message_lastname}</b> to {int(current_reputation)}. Rank was automatically updated to {rank_upgraded}'
+        await context.bot.send_message(chatid, f'Staff set reputation of <b>{original_message_firstname} {original_message_lastname}</b> to {int(current_reputation)}. Rank was automatically updated to {rank_upgraded}')
+        return
     
     if '!norep30days' == processed:
         #Command to check 30 days no karma recieved of users, so check if user is admin
         if userid not in admins:
-            return "Do not attempt to use commands you are unauthorised to. You will be warned or banned"
+            await context.bot.send_message(chatid, "Do not attempt to use commands you are unauthorised to. You will be warned or banned")
+            return
         
         #Read database and filter database on did not recieve karma in last 30 days and part of non-immune ranks
         database = pd.read_csv(database_path)
@@ -326,21 +375,24 @@ def handle_response(update: Update, text: str) -> str:
    
 
         if database.empty:
-            return "Fantastic! All users have recieved reputation in the last 30 days"
+            await context.bot.send_message(chatid, "Fantastic! All users have recieved reputation in the last 30 days")
+            return
 
         returnstring = "Users who have not recieved reputation in the last 30 days:\n\n"
         
         for row in database.index:
             returnstring = returnstring + '<b>' +str(database['firstname'][row]) + ' ' + str(database['lastname'][row])+ '</b> (' + str(database['reputation'][row])+') - Last recieved reputation: '+database['last_recieved_reputation'][row].strftime("%Y-%m-%d")+'\n'
             
-        return returnstring
+        await context.bot.send_message(chatid, returnstring)
+        return
     
     if '!norep60days' == processed:
         #Command to check 60 days no reputation recieved of users, so check if user is admin
         if userid not in admins:
-            return "Do not attempt to use commands you are unauthorised to. You will be warned or banned"
+            await context.bot.send_message(chatid, "Do not attempt to use commands you are unauthorised to. You will be warned or banned")
+            return
         
-        #Read database and filter database on did not recieve reputation in last 60 days and part of non-immune ranks
+        #Read database and filter database on did not recieve karma in last 60 days and part of non-immune ranks
         database = pd.read_csv(database_path)
 
         not_immunitylist = [rank_names[0], rank_names[1], rank_names[2], rank_names[3]]
@@ -351,64 +403,16 @@ def handle_response(update: Update, text: str) -> str:
    
 
         if database.empty:
-            return "Fantastic! All users have recieved reputation in the last 60 days"
+            await context.bot.send_message(chatid, "Fantastic! All users have recieved reputation in the last 30 days")
+            return
 
         returnstring = "Users who have not recieved reputation in the last 60 days:\n\n"
         
         for row in database.index:
             returnstring = returnstring + '<b>' +str(database['firstname'][row]) + ' ' + str(database['lastname'][row])+ '</b> (' + str(database['reputation'][row])+') - Last recieved reputation: '+database['last_recieved_reputation'][row].strftime("%Y-%m-%d")+'\n'
             
-        return returnstring
-    
-    return False
-
-    
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    #Information variables of the message
-    chat_type: str = update.message.chat.type
-    chatid: int = update.message.chat_id
-    text: str = update.message.text
-    userid: int = update.message.from_user.id
-    username = update.message.from_user.username
-    firstname = update.message.from_user.first_name
-    lastname = update.message.from_user.last_name
-    leave = False
-
-    #This is a codeblock that runs every time a message is sent in chat
-
-    #If lastname is available but not yet in database, fill it in database
-    if pd.isnull(get_user_value(userid, 'lastname')) == True and lastname != None:
-        write_user_value(userid, 'lastname', firstname)
-        log(f'Lastname of user ({userid}) was not yet available in database, but available in telegram. Adding to database...')
-    
-    #If username is available but not yet in database, fill it in database
-    if pd.isnull(get_user_value(userid, 'username')) == True and username != None:
-        write_user_value(userid, 'username', username)
-        log(f'Username of user ({userid}) was not yet available in database, but available in telegram. Adding to database...')
-
-    #End of codeblock for always on tasks
-
-    
-    #Logging of sent message
-    log(f'User {update.message.from_user.first_name} {update.message.from_user.last_name} with ID ({update.message.from_user.id}) and username ({update.message.from_user.username}) in {chat_type} {update.message.chat_id}: "{text}"')
-
-    #Check if bot usage allowed. If not, set var to leave at the end of this message
-    if chatid == allowed_chat_id or allowed_chat_id == False:
-        response: str = handle_response(update, text)
-    else:
-        response: str = "This is a private bot. You are not authorised to use this bot. Leaving chat.."
-        leave = True
-    
-    #Repond to user
-    if response != False:
-        log('Bot: '+response)
-        await update.message.reply_text(response, parse_mode='HTML')
-
-    #Leave chat if non allowed groupid
-    if leave == True:
-        await app.bot.leave_chat(chatid)
+        await context.bot.send_message(chatid, returnstring)
+        return
 
 async def handle_newchatmember(update: Update, context: ContextTypes.DEFAULT_TYPE):
     new_members = update.message.new_chat_members
@@ -449,8 +453,8 @@ async def handle_leftchatmember(update: Update, context: ContextTypes.DEFAULT_TY
         write_user_value(left_member.id, 'current_member', 0)
 
 
-async def error (update: Update, context: ContextTypes.DEFAULT_TYPE):
-     log(f'Update ({update}) caused error: {context.error}')
+# async def error (update: Update, context: ContextTypes.DEFAULT_TYPE):
+#      log(f'Update ({update}) caused error: {context.error}')
 
 if __name__ == '__main__':
     log('Starting....')
@@ -465,7 +469,7 @@ if __name__ == '__main__':
     app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, handle_leftchatmember))
 
     # #Errors
-    app.add_error_handler(error)
+    # app.add_error_handler(error)
 
     #polling
     log('Polling....')

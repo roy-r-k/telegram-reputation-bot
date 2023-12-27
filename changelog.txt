@@ -1,3 +1,6 @@
+v0.13
+- Removed handle_response and nested all commands inside handle_messages so more fine-grained control is possible w.r.t. bot actions on commands instead of only reply_to_message
+
 v0.12
 - Removed code to check on every message if user exists in database. If user suspects he is not registered, he can use !register
 - Update string from !register to make it more clean when user was already registered
