@@ -396,7 +396,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         log(f'Lastname of user ({userid}) was not yet available in database, but available in telegram. Adding to database...')
     
     #If username is available but not yet in database, fill it in database
-    if pd.isnull(get_user_value(userid, 'username')) == True and lastname != None:
+    if pd.isnull(get_user_value(userid, 'username')) == True and username != None:
         write_user_value(userid, 'username', username)
         log(f'Username of user ({userid}) was not yet available in database, but available in telegram. Adding to database...')
 
