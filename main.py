@@ -91,6 +91,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message_is_reply = False
 
     #This is a codeblock that runs every time a message is sent in chat
+    database = pd.read_csv(database_path)
+
+    if database[(database.userid == userid)].empty:
+            #Message from user not yet registered in database, so add them
+            log(f'User with ID ({userid}) joined and does not exist yet. Creating..')
+            database.loc[len(database.index)] = [userid, username, firstname, lastname, rank_names[0], 0, date.today(), 1]
+            
+    database.to_csv(database_path, index=False)
 
     #If lastname is available but not yet in database, fill it in database
     if pd.isnull(get_user_value(userid, 'lastname')) == True and lastname != None:
@@ -123,11 +131,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             log(f'User with ID ({userid}) used !register command, and I did not know them yet. This is weird. Will add manually now..')
             database.loc[len(database.index)] = [userid, update.message.from_user.username, firstname, lastname, rank_names[0], 0, date.today(), 1]
             database.to_csv(database_path, index=False)
-            await context.bot.send_message(chatid, "I did not see you before (maybe I was offline when you joined), but you are registered as of now.")
         else:
             #New member joined but already exists in database as left user, only change current_member state
             log(f'User with ID ({userid}) used !register command, and I already knew them.')
-            await context.bot.send_message(chatid, "Registering normally happens automatically with no further user action required, like with you. You were already registered :)")   
+              
+        await context.bot.send_message(chatid, "Check! You're registered!\n\nFor other users reading this: Normally users are automatically registered upon joining the chat. You only need to use this command if you cannot recieve reputation or because staff told you to")
+        return  
 
     if '++' == processed:
         #Check if message is a reply to a user or a standalone message. If not, return error
@@ -453,8 +462,8 @@ async def handle_leftchatmember(update: Update, context: ContextTypes.DEFAULT_TY
         write_user_value(left_member.id, 'current_member', 0)
 
 
-# async def error (update: Update, context: ContextTypes.DEFAULT_TYPE):
-#      log(f'Update ({update}) caused error: {context.error}')
+async def error (update: Update, context: ContextTypes.DEFAULT_TYPE):
+     log(f'Update ({update}) caused error: {context.error}')
 
 if __name__ == '__main__':
     log('Starting....')
@@ -468,8 +477,8 @@ if __name__ == '__main__':
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_newchatmember))
     app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, handle_leftchatmember))
 
-    # #Errors
-    # app.add_error_handler(error)
+    #Errors
+    app.add_error_handler(error)
 
     #polling
     log('Polling....')
