@@ -454,6 +454,7 @@ async def handle_leftchatmember(update: Update, context: ContextTypes.DEFAULT_TY
         #Member left, but strangly did not exist yet, so add them with current_member state 0
         log(f'User with ID ({left_member.id}) left and does strangely not exist yet. Creating with current_member state = 0')
         database.loc[len(database.index)] = [left_member.id, left_member.username, left_member.first_name, None, rank_names[0], 0, date.today(), 0]
+        database.to_csv(database_path, index=False)
     else:
         #Member left and already exists in database (normal situation). So only change member state
         log(f'User with ID ({left_member.id}) left and exists (normal situation). Changing member state..')

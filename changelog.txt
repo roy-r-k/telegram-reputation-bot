@@ -1,0 +1,3 @@
+v0.10
+- Changelog added
+- Small bugfix: If user left but was not in database, code would add user on to database in memory but did not save to file. Fixed.
