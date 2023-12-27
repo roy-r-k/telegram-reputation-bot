@@ -245,7 +245,7 @@ def handle_response(update: Update, text: str) -> str:
 
         return 'Your stats are:\n\n'+f'<b>reputation:</b> {get_user_value(userid, "reputation")}\n<b>Rank:</b> {get_user_value(userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(userid, "last_recieved_reputation")}'
     
-    if '!getstats' == processed:
+    if '!stats' == processed:
         #Check if message is a reply to a user or a standalone message. If not, return error
         if message_is_reply == False:
             return "You can only get a users stats by replying to their message. Just sending '!getstats' in the chat does not work."
@@ -397,7 +397,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     #If username is available but not yet in database, fill it in database
     if pd.isnull(get_user_value(userid, 'username')) == True and lastname != None:
-        write_user_value(userid, 'username', firstname)
+        write_user_value(userid, 'username', username)
         log(f'Username of user ({userid}) was not yet available in database, but available in telegram. Adding to database...')
 
     #End of codeblock for always on tasks

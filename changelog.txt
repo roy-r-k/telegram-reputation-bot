@@ -1,3 +1,7 @@
+v0.11
+- Small bugfix: !stats command from bot help was !getstats. Changed to !stats
+- Small bugfix: In method to try to fill username if not yet available, wrong var was used so firstname was inserted in reality. Changed to username var
+
 v0.10
 - Changelog added
 - Small bugfix: If user left but was not in database, code would add user on to database in memory but did not save to file. Fixed.
