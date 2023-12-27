@@ -111,8 +111,8 @@ def handle_response(update: Update, text: str) -> str:
             return  "Thanks, but bots don't need reputation :)"
         
         #Check if person who is giving karma is the same as recieving
-        # if userid == original_message_userid:
-        #     return "Giving yourself reputation is forbidden"
+        if userid == original_message_userid:
+            return "Giving yourself reputation is forbidden"
         
         #Check if person who is recieving reputation is admin, if so, return simple string and don't affect karma and rank
         if original_message_userid in admins:
