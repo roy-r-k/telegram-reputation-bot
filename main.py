@@ -11,8 +11,6 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 '''
 To do:
 
-- Keep staff out of '++', !getrep, !norep30days and !norep60days
-- Check if log.txt and database.csv exists. If not, make them automatically
 - Make logging database for who has given who reputation when
 
 '''
@@ -28,8 +26,10 @@ bot_username = configfile.bot_username
 rank_names = configfile.rank_names
 rank_reputation = configfile.rank_reputation
 
-print(database_path)
-print(logfile_path)
+#Check if database exist. If not, make it
+if os.path.isfile(database_path) == False:
+    pd.DataFrame(columns = ['userid','username','firstname','lastname','rank','reputation','last_recieved_reputation','current_member']).to_csv(database_path, index=False)
+
 
 #Regular functions
 def log(message):
@@ -110,6 +110,14 @@ def handle_response(update: Update, text: str) -> str:
         if update.message.reply_to_message.from_user.is_bot:
             return  "Thanks, but bots don't need reputation :)"
         
+        #Check if person who is giving karma is the same as recieving
+        # if userid == original_message_userid:
+        #     return "Giving yourself reputation is forbidden"
+        
+        #Check if person who is recieving reputation is admin, if so, return simple string and don't affect karma and rank
+        if original_message_userid in admins:
+            return f'<b>{firstname} {lastname or ""}</b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b>!'
+        
         #Error checks passed
         #We are going to add 1 reputation to the user who the message originated from
 
@@ -145,11 +153,18 @@ def handle_response(update: Update, text: str) -> str:
         else:
             rank_upgraded = False
 
+        #If sender is admin, filter out reputation in reply
+        if userid in admins:
+            if rank_upgraded == False:
+                return f'<b>{firstname} {lastname or ""}</b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!'
+            else:
+                return f'<b>{firstname} {lastname or ""} </b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!\n\nCongratulations! Because you reached {int(current_reputation) + 1} reputation, you have reached the rank of {rank_upgraded}!'
+
         #If rank upgraded, send reputation + upgrade rank message, else only reputation message
         if rank_upgraded == False:
-            return f'<b>{firstname} {lastname}</b> ({get_user_value(userid, "reputation")}) gave 1 reputation to <b>{original_message_firstname} {original_message_lastname}</b> ({int(current_reputation) + 1})!'
+            return f'<b>{firstname} {lastname or ""}</b> ({get_user_value(userid, "reputation")}) gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!'
         else:
-            return f'<b>{firstname} {lastname}</b> ({get_user_value(userid, "reputation")}) gave 1 reputation to <b>{original_message_firstname} {original_message_lastname}</b> ({int(current_reputation) + 1})!\n\nCongratulations! Because you reached {int(current_reputation) + 1} reputation, you have reached the rank of {rank_upgraded}!'
+            return f'<b>{firstname} {lastname or ""} </b> ({get_user_value(userid, "reputation")}) gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!\n\nCongratulations! Because you reached {int(current_reputation) + 1} reputation, you have reached the rank of {rank_upgraded}!'
     
     if '!top25' == processed:
 
@@ -160,8 +175,10 @@ def handle_response(update: Update, text: str) -> str:
         count = 1
         
         for row in database.index:
-            returnstring = returnstring + str(count) + '. '+ str(database['firstname'][row]) + ' ' + str(database['lastname'][row])+ ' (' + str(database['reputation'][row])+')\n'
-            
+            if pd.isnull(database['lastname'][row]):
+                returnstring = returnstring + str(count) + '. '+ database['firstname'][row] +  ' (' + str(database['reputation'][row])+')\n'
+            else:
+                returnstring = returnstring + str(count) + '. '+ str(database['firstname'][row]) + ' ' + str(database['lastname'][row])+ ' (' + str(database['reputation'][row])+')\n'                
             if count == 25:
                 break
            
@@ -178,36 +195,45 @@ def handle_response(update: Update, text: str) -> str:
         count = 1
         
         for row in database.index:
-            returnstring = returnstring + str(count) + '. '+ str(database['firstname'][row]) + ' ' + str(database['lastname'][row])+ ' (' + str(database['reputation'][row])+')\n'
-            
+            if pd.isnull(database['lastname'][row]):
+                returnstring = returnstring + str(count) + '. '+ database['firstname'][row] +  ' (' + str(database['reputation'][row])+')\n'
+            else:
+                returnstring = returnstring + str(count) + '. '+ str(database['firstname'][row]) + ' ' + str(database['lastname'][row])+ ' (' + str(database['reputation'][row])+')\n'                
             if count == 10:
                 break
            
             count = count + 1
-            
+
         return returnstring
+            
     if '!bottom10' == processed:
         
         database = pd.read_csv(database_path)
         database = database[['userid', 'firstname', 'lastname', 'reputation']].sort_values(by='reputation',ascending=True)
 
-        returnstring = "The bottom 10 users with the lowest reputation are:\n\n"
+        returnstring = "The bottom 10 users with the highest reputation are:\n\n"
         count = 1
         
         for row in database.index:
-            returnstring = returnstring + str(count) + '. '+ str(database['firstname'][row]) + ' ' + str(database['lastname'][row])+ ' (' + str(database['reputation'][row])+')\n'
-            
+            if pd.isnull(database['lastname'][row]):
+                returnstring = returnstring + str(count) + '. '+ database['firstname'][row] +  ' (' + str(database['reputation'][row])+')\n'
+            else:
+                returnstring = returnstring + str(count) + '. '+ str(database['firstname'][row]) + ' ' + str(database['lastname'][row])+ ' (' + str(database['reputation'][row])+')\n'                
             if count == 10:
                 break
            
             count = count + 1
-            
+
         return returnstring
     
     if '!mystats' == processed:
         #Check if message is a reply to a user or a standalone message. If not, return error
         if message_is_reply == True:
             return "This command does not work in a reply. Please issue this command in a normal message."
+        
+        #Check if user is in admins. If so, return nothing
+        if userid in admins:
+            return "The stats of this user are hidden"
 
         return 'Your stats are:\n\n'+f'<b>reputation:</b> {get_user_value(userid, "reputation")}\n<b>Rank:</b> {get_user_value(userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(userid, "last_recieved_reputation")}'
     
@@ -218,6 +244,10 @@ def handle_response(update: Update, text: str) -> str:
         
         if update.message.reply_to_message.from_user.is_bot:
             return  "Bots don't have stats :)"
+        
+        #Check if user is in admins. If so, return nothing
+        if userid in admins:
+            return "The stats of this user are hidden"
 
         return 'The stats of the user you replied to are:\n\n'+f'<b>reputation:</b> {get_user_value(original_message_userid, "reputation")}\n<b>Rank:</b> {get_user_value(original_message_userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(original_message_userid, "last_recieved_reputation")}'
     
@@ -277,13 +307,18 @@ def handle_response(update: Update, text: str) -> str:
         if userid not in admins:
             return "Do not attempt to use commands you are unauthorised to. You will be warned or banned"
         
-        #Read database and filter database on did not recieve karma in last 30 days
+        #Read database and filter database on did not recieve karma in last 30 days and part of non-immune ranks
         database = pd.read_csv(database_path)
+
+        not_immunitylist = [rank_names[0], rank_names[1], rank_names[2], rank_names[3]]
+        database = database[database['rank'].isin(not_immunitylist)]
+
         database['last_recieved_reputation'] = pd.to_datetime(database['last_recieved_reputation'], format='%Y-%m-%d')
         database = database[database.last_recieved_reputation < datetime.now() - pd.to_timedelta("30d")]
+   
 
-        if database.empty():
-            return "Fantastic! All users have recieved karma in the last 30 days"
+        if database.empty:
+            return "Fantastic! All users have recieved reputation in the last 30 days"
 
         returnstring = "Users who have not recieved reputation in the last 30 days:\n\n"
         
@@ -293,18 +328,23 @@ def handle_response(update: Update, text: str) -> str:
         return returnstring
     
     if '!norep60days' == processed:
-        #Command to check 60 days no karma recieved of users, so check if user is admin
+        #Command to check 60 days no reputation recieved of users, so check if user is admin
         if userid not in admins:
             return "Do not attempt to use commands you are unauthorised to. You will be warned or banned"
         
-        #Read database and filter database on did not recieve karma in last 30 days
+        #Read database and filter database on did not recieve reputation in last 60 days and part of non-immune ranks
         database = pd.read_csv(database_path)
+
+        not_immunitylist = [rank_names[0], rank_names[1], rank_names[2], rank_names[3]]
+        database = database[database['rank'].isin(not_immunitylist)]
+
         database['last_recieved_reputation'] = pd.to_datetime(database['last_recieved_reputation'], format='%Y-%m-%d')
         database = database[database.last_recieved_reputation < datetime.now() - pd.to_timedelta("60d")]
+   
 
-        if database.empty():
-            return "Fantastic! All users have recieved karma in the last 60 days"
-        
+        if database.empty:
+            return "Fantastic! All users have recieved reputation in the last 60 days"
+
         returnstring = "Users who have not recieved reputation in the last 60 days:\n\n"
         
         for row in database.index:
@@ -412,8 +452,8 @@ async def handle_leftchatmember(update: Update, context: ContextTypes.DEFAULT_TY
         write_user_value(left_member.id, 'current_member', 0)
 
 
-async def error (update: Update, context: ContextTypes.DEFAULT_TYPE):
-     log(f'Update ({update}) caused error: {context.error}')
+# async def error (update: Update, context: ContextTypes.DEFAULT_TYPE):
+#      log(f'Update ({update}) caused error: {context.error}')
 
 if __name__ == '__main__':
     log('Starting....')
@@ -427,8 +467,8 @@ if __name__ == '__main__':
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_newchatmember))
     app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, handle_leftchatmember))
 
-    #Errors
-    app.add_error_handler(error)
+    # #Errors
+    # app.add_error_handler(error)
 
     #polling
     log('Polling....')
