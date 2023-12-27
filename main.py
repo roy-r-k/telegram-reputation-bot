@@ -243,7 +243,7 @@ def handle_response(update: Update, text: str) -> str:
         if userid in admins:
             return "The stats of this user are hidden"
 
-        return 'Your stats are:\n\n'+f'<b>reputation:</b> {get_user_value(userid, "reputation")}\n<b>Rank:</b> {get_user_value(userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(userid, "last_recieved_reputation")}'
+        return 'Your stats are:\n\n'+f'<b>Reputation:</b> {get_user_value(userid, "reputation")}\n<b>Rank:</b> {get_user_value(userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(userid, "last_recieved_reputation")}'
     
     if '!stats' == processed:
         #Check if message is a reply to a user or a standalone message. If not, return error
@@ -257,7 +257,7 @@ def handle_response(update: Update, text: str) -> str:
         if userid in admins:
             return "The stats of this user are hidden"
 
-        return 'The stats of the user you replied to are:\n\n'+f'<b>reputation:</b> {get_user_value(original_message_userid, "reputation")}\n<b>Rank:</b> {get_user_value(original_message_userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(original_message_userid, "last_recieved_reputation")}'
+        return 'The stats of the user you replied to are:\n\n'+f'<b>Reputation:</b> {get_user_value(original_message_userid, "reputation")}\n<b>Rank:</b> {get_user_value(original_message_userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(original_message_userid, "last_recieved_reputation")}'
     
     if '!setrep' in processed:
         #Setrep command to set reputation of users, so check if user is admin
