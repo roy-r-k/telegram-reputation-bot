@@ -460,8 +460,8 @@ async def handle_leftchatmember(update: Update, context: ContextTypes.DEFAULT_TY
         write_user_value(left_member.id, 'current_member', 0)
 
 
-# async def error (update: Update, context: ContextTypes.DEFAULT_TYPE):
-#      log(f'Update ({update}) caused error: {context.error}')
+async def error (update: Update, context: ContextTypes.DEFAULT_TYPE):
+     log(f'Update ({update}) caused error: {context.error}')
 
 if __name__ == '__main__':
     log('Starting....')
@@ -476,7 +476,7 @@ if __name__ == '__main__':
     app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, handle_leftchatmember))
 
     # #Errors
-    # app.add_error_handler(error)
+    app.add_error_handler(error)
 
     #polling
     log('Polling....')
