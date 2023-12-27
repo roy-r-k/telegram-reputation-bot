@@ -95,11 +95,11 @@ def handle_response(update: Update, text: str) -> str:
             log(f'User with ID ({userid}) used !register command, and I did not know them yet. This is weird. Will add manually now..')
             database.loc[len(database.index)] = [userid, update.message.from_user.username, firstname, lastname, rank_names[0], 0, date.today(), 1]
             database.to_csv(database_path, index=False)
-            return "I did not see you before, but I see you now! You are registered as of now."
+            return "I did not see you before (maybe I was offline when you joined), but you are registered as of now."
         else:
             #New member joined but already exists in database as left user, only change current_member state
             log(f'User with ID ({userid}) used !register command, and I already knew them.')
-            return "You are registered :)"   
+            return "You were already registered :)"   
 
     if '++' == processed:
         #Check if message is a reply to a user or a standalone message. If not, return error
@@ -377,18 +377,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     leave = False
 
     #This is a codeblock that runs every time a message is sent in chat
-    
-    #Open database and check if user exists
-    database = pd.read_csv(database_path)
-
-    #If everything went right, new_chat_member method already added user, however, if that fails, this adds member to database when they send a message (failsafe)
-    if database[(database.userid == userid)].empty:
-        #User does not exist, so add them
-        log(f'User with ID ({userid}) does not exist yet. Creating..')
-        database.loc[len(database.index)] = [userid, username, firstname, lastname, rank_names[0], 0, date.today(), 1]
-
-    #Close database
-    database.to_csv(database_path, index=False) 
 
     #If lastname is available but not yet in database, fill it in database
     if pd.isnull(get_user_value(userid, 'lastname')) == True and lastname != None:

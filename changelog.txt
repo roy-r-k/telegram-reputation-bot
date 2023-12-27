@@ -1,3 +1,7 @@
+v0.12
+- Removed code to check on every message if user exists in database. If user suspects he is not registered, he can use !register
+- Update string from !register to make it more clean when user was already registered
+
 v0.11
 - Small bugfix: !stats command from bot help was !getstats. Changed to !stats
 - Small bugfix: In method to try to fill username if not yet available, wrong var was used so firstname was inserted in reality. Changed to username var
