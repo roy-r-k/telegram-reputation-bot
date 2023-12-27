@@ -169,6 +169,8 @@ def handle_response(update: Update, text: str) -> str:
     if '!top25' == processed:
 
         database = pd.read_csv(database_path)
+        #Remove VIP/Staff from selection
+        database = database[database.rank < 90000]
         database = database[['userid', 'firstname', 'lastname', 'reputation']].sort_values(by='reputation',ascending=False)
 
         returnstring = "The top 25 users with the highest reputation are:\n\n"
@@ -176,7 +178,7 @@ def handle_response(update: Update, text: str) -> str:
         
         for row in database.index:
             if pd.isnull(database['lastname'][row]):
-                returnstring = returnstring + str(count) + '. '+ database['firstname'][row] +  ' (' + str(database['reputation'][row])+')\n'
+                returnstring = returnstring + str(count) + '. '+ str(database['firstname'][row]) +  ' (' + str(database['reputation'][row])+')\n'
             else:
                 returnstring = returnstring + str(count) + '. '+ str(database['firstname'][row]) + ' ' + str(database['lastname'][row])+ ' (' + str(database['reputation'][row])+')\n'                
             if count == 25:
@@ -189,14 +191,18 @@ def handle_response(update: Update, text: str) -> str:
     if '!top10' == processed:
         
         database = pd.read_csv(database_path)
+
+        #Remove VIP/Staff from selection
+        database = database[database.rank < 90000]
         database = database[['userid', 'firstname', 'lastname', 'reputation']].sort_values(by='reputation',ascending=False)
 
         returnstring = "The top 10 users with the highest reputation are:\n\n"
         count = 1
         
         for row in database.index:
+
             if pd.isnull(database['lastname'][row]):
-                returnstring = returnstring + str(count) + '. '+ database['firstname'][row] +  ' (' + str(database['reputation'][row])+')\n'
+                returnstring = returnstring + str(count) + '. '+ str(database['firstname'][row]) +  ' (' + str(database['reputation'][row])+')\n'
             else:
                 returnstring = returnstring + str(count) + '. '+ str(database['firstname'][row]) + ' ' + str(database['lastname'][row])+ ' (' + str(database['reputation'][row])+')\n'                
             if count == 10:
@@ -209,6 +215,8 @@ def handle_response(update: Update, text: str) -> str:
     if '!bottom10' == processed:
         
         database = pd.read_csv(database_path)
+        #Remove VIP/Staff from selection
+        database = database[database.rank < 90000]
         database = database[['userid', 'firstname', 'lastname', 'reputation']].sort_values(by='reputation',ascending=True)
 
         returnstring = "The bottom 10 users with the highest reputation are:\n\n"
@@ -216,7 +224,7 @@ def handle_response(update: Update, text: str) -> str:
         
         for row in database.index:
             if pd.isnull(database['lastname'][row]):
-                returnstring = returnstring + str(count) + '. '+ database['firstname'][row] +  ' (' + str(database['reputation'][row])+')\n'
+                returnstring = returnstring + str(count) + '. '+ str(database['firstname'][row]) +  ' (' + str(database['reputation'][row])+')\n'
             else:
                 returnstring = returnstring + str(count) + '. '+ str(database['firstname'][row]) + ' ' + str(database['lastname'][row])+ ' (' + str(database['reputation'][row])+')\n'                
             if count == 10:
