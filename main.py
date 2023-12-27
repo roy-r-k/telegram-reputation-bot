@@ -99,7 +99,7 @@ def handle_response(update: Update, text: str) -> str:
         else:
             #New member joined but already exists in database as left user, only change current_member state
             log(f'User with ID ({userid}) used !register command, and I already knew them.')
-            return "You were already registered :)"   
+            return "Registering normally happens automatically with no further user action required, like with you. You were already registered :)"   
 
     if '++' == processed:
         #Check if message is a reply to a user or a standalone message. If not, return error
