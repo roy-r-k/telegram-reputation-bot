@@ -170,7 +170,7 @@ def handle_response(update: Update, text: str) -> str:
 
         database = pd.read_csv(database_path)
         #Remove VIP/Staff from selection
-        database = database[database.rank < 90000]
+        database = database[database['reputation'] < 90000]
         database = database[['userid', 'firstname', 'lastname', 'reputation']].sort_values(by='reputation',ascending=False)
 
         returnstring = "The top 25 users with the highest reputation are:\n\n"
@@ -193,7 +193,7 @@ def handle_response(update: Update, text: str) -> str:
         database = pd.read_csv(database_path)
 
         #Remove VIP/Staff from selection
-        database = database[database.rank < 90000]
+        database = database[database['reputation'] < 90000]
         database = database[['userid', 'firstname', 'lastname', 'reputation']].sort_values(by='reputation',ascending=False)
 
         returnstring = "The top 10 users with the highest reputation are:\n\n"
@@ -216,7 +216,7 @@ def handle_response(update: Update, text: str) -> str:
         
         database = pd.read_csv(database_path)
         #Remove VIP/Staff from selection
-        database = database[database.rank < 90000]
+        database = database[database['reputation'] < 90000]
         database = database[['userid', 'firstname', 'lastname', 'reputation']].sort_values(by='reputation',ascending=True)
 
         returnstring = "The bottom 10 users with the highest reputation are:\n\n"
