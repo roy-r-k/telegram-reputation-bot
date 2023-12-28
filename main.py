@@ -214,8 +214,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if '!top25' == processed:
 
         database = pd.read_csv(database_path)
+
         #Remove VIP/Staff from selection
         database = database[database['reputation'] < 90000]
+
+        #Filter out non-current members
+        database = database[database['current_member'] == 1]
+        
         database = database[['userid', 'firstname', 'lastname', 'reputation']].sort_values(by='reputation',ascending=False)
 
         returnstring = "The top 25 users with the highest reputation are:\n\n"
@@ -239,6 +244,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         #Remove VIP/Staff from selection
         database = database[database['reputation'] < 90000]
+
+        #Filter out non-current members
+        database = database[database['current_member'] == 1]
+        
         database = database[['userid', 'firstname', 'lastname', 'reputation']].sort_values(by='reputation',ascending=False)
 
         returnstring = "The top 10 users with the highest reputation are:\n\n"
@@ -260,8 +269,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if '!bottom10' == processed:
         
         database = pd.read_csv(database_path)
+
         #Remove VIP/Staff from selection
         database = database[database['reputation'] < 90000]
+
+        #Filter out non-current members
+        database = database[database['current_member'] == 1]
+
         database = database[['userid', 'firstname', 'lastname', 'reputation']].sort_values(by='reputation',ascending=True)
 
         returnstring = "The bottom 10 users with the highest reputation are:\n\n"
@@ -376,8 +390,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         #Read database and filter database on did not recieve karma in last 30 days and part of non-immune ranks
         database = pd.read_csv(database_path)
 
+        #filter out members with immunity from inactivity
         not_immunitylist = [rank_names[0], rank_names[1], rank_names[2], rank_names[3]]
         database = database[database['rank'].isin(not_immunitylist)]
+
+        #Filter out non-current members
+        database = database[database['current_member'] == 1]
 
         database['last_recieved_reputation'] = pd.to_datetime(database['last_recieved_reputation'], format='%Y-%m-%d')
         database = database[database.last_recieved_reputation < datetime.now() - pd.to_timedelta("30d")]
@@ -404,8 +422,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         #Read database and filter database on did not recieve karma in last 60 days and part of non-immune ranks
         database = pd.read_csv(database_path)
 
+        #filter out members with immunity from inactivity
         not_immunitylist = [rank_names[0], rank_names[1], rank_names[2], rank_names[3]]
         database = database[database['rank'].isin(not_immunitylist)]
+
+        #Filter out non-current members
+        database = database[database['current_member'] == 1]
 
         database['last_recieved_reputation'] = pd.to_datetime(database['last_recieved_reputation'], format='%Y-%m-%d')
         database = database[database.last_recieved_reputation < datetime.now() - pd.to_timedelta("60d")]

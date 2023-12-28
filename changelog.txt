@@ -1,3 +1,6 @@
+v0.15
+- Filrter out non-current member from !top, !bottom and !norep commands
+
 v0.14
 - Added parse_mode='HTML' to send_message command that used string with HTML
 
