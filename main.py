@@ -135,7 +135,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             #New member joined but already exists in database as left user, only change current_member state
             log(f'User with ID ({userid}) used !register command, and I already knew them.')
               
-        await context.bot.send_message(chatid, "Check! You're registered!\n\nFor other users reading this: Normally users are automatically registered upon joining the chat. You only need to use this command if you cannot recieve reputation or because staff told you to")
+        await context.bot.send_message(chatid, "Check! You're registered!\n\n<i>For other users reading this: Normally users are automatically registered upon joining the chat. You only need to use this command if you cannot recieve reputation or because staff told you to</i>", parse_mode='HTML')
         return  
 
     if '++' == processed:
@@ -156,7 +156,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         #Check if person who is recieving reputation is admin, if so, return simple string and don't affect karma and rank
         if original_message_userid in admins:
-            await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""}</b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b>!')
+            await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""}</b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b>!', parse_mode='HTML')
             return
         
         #Error checks passed
@@ -197,18 +197,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         #If sender is admin, filter out reputation in reply
         if userid in admins:
             if rank_upgraded == False:
-                await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""}</b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!')
+                await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""}</b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!', parse_mode='HTML')
                 return
             else:
-                await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""} </b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!\n\nCongratulations! Because you reached {int(current_reputation) + 1} reputation, you have reached the rank of {rank_upgraded}!')
+                await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""} </b> gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!\n\nCongratulations! Because you reached {int(current_reputation) + 1} reputation, you have reached the rank of {rank_upgraded}!', parse_mode='HTML')
                 return
         
         #If rank upgraded, send reputation + upgrade rank message, else only reputation message
         if rank_upgraded == False:
-            await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""}</b> ({get_user_value(userid, "reputation")}) gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!')
+            await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""}</b> ({get_user_value(userid, "reputation")}) gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!', parse_mode='HTML')
             return
         else:
-            await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""} </b> ({get_user_value(userid, "reputation")}) gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!\n\nCongratulations! Because you reached {int(current_reputation) + 1} reputation, you have reached the rank of {rank_upgraded}!')
+            await context.bot.send_message(chatid, f'<b>{firstname} {lastname or ""} </b> ({get_user_value(userid, "reputation")}) gave 1 reputation to <b>{original_message_firstname} {original_message_lastname or ""}</b> ({int(current_reputation) + 1})!\n\nCongratulations! Because you reached {int(current_reputation) + 1} reputation, you have reached the rank of {rank_upgraded}!', parse_mode='HTML')
             return
 
     if '!top25' == processed:
@@ -231,7 +231,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
            
             count = count + 1
 
-        await context.bot.send_message(chatid, returnstring)
+        await context.bot.send_message(chatid, returnstring, parse_mode='HTML')
     
     if '!top10' == processed:
         
@@ -255,7 +255,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
            
             count = count + 1
 
-        await context.bot.send_message(chatid, returnstring)
+        await context.bot.send_message(chatid, returnstring, parse_mode='HTML')
             
     if '!bottom10' == processed:
         
@@ -277,7 +277,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
            
             count = count + 1
 
-        await context.bot.send_message(chatid, returnstring)
+        await context.bot.send_message(chatid, returnstring, parse_mode='HTML')
     
     if '!mystats' == processed:
         #Check if message is a reply to a user or a standalone message. If not, return error
@@ -290,7 +290,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chatid, "The stats of this user are hidden")
             return
 
-        await context.bot.send_message(chatid, 'Your stats are:\n\n'+f'<b>Reputation:</b> {get_user_value(userid, "reputation")}\n<b>Rank:</b> {get_user_value(userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(userid, "last_recieved_reputation")}')
+        await context.bot.send_message(chatid, 'Your stats are:\n\n'+f'<b>Reputation:</b> {get_user_value(userid, "reputation")}\n<b>Rank:</b> {get_user_value(userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(userid, "last_recieved_reputation")}', parse_mode='HTML')
         return
     
     if '!stats' == processed:
@@ -308,7 +308,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chatid, "The stats of this user are hidden")
             return
 
-        await context.bot.send_message(chatid, 'The stats of the user you replied to are:\n\n'+f'<b>Reputation:</b> {get_user_value(original_message_userid, "reputation")}\n<b>Rank:</b> {get_user_value(original_message_userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(original_message_userid, "last_recieved_reputation")}')
+        await context.bot.send_message(chatid, 'The stats of the user you replied to are:\n\n'+f'<b>Reputation:</b> {get_user_value(original_message_userid, "reputation")}\n<b>Rank:</b> {get_user_value(original_message_userid, "rank")}\n<b>Last recieved reputation:</b> {get_user_value(original_message_userid, "last_recieved_reputation")}', parse_mode='HTML')
         return
     
     if '!setrep' in processed:
@@ -364,7 +364,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             rank_upgraded = rank_names[0]
 
         #Send confirmation message in chat
-        await context.bot.send_message(chatid, f'Staff set reputation of <b>{original_message_firstname} {original_message_lastname}</b> to {int(current_reputation)}. Rank was automatically updated to {rank_upgraded}')
+        await context.bot.send_message(chatid, f'Staff set reputation of <b>{original_message_firstname} {original_message_lastname}</b> to {int(current_reputation)}. Rank was automatically updated to {rank_upgraded}', parse_mode='HTML')
         return
     
     if '!norep30days' == processed:
@@ -392,7 +392,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for row in database.index:
             returnstring = returnstring + '<b>' +str(database['firstname'][row]) + ' ' + str(database['lastname'][row])+ '</b> (' + str(database['reputation'][row])+') - Last recieved reputation: '+database['last_recieved_reputation'][row].strftime("%Y-%m-%d")+'\n'
             
-        await context.bot.send_message(chatid, returnstring)
+        await context.bot.send_message(chatid, returnstring, parse_mode='HTML')
         return
     
     if '!norep60days' == processed:
@@ -420,7 +420,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for row in database.index:
             returnstring = returnstring + '<b>' +str(database['firstname'][row]) + ' ' + str(database['lastname'][row])+ '</b> (' + str(database['reputation'][row])+') - Last recieved reputation: '+database['last_recieved_reputation'][row].strftime("%Y-%m-%d")+'\n'
             
-        await context.bot.send_message(chatid, returnstring)
+        await context.bot.send_message(chatid, returnstring, parse_mode='HTML')
         return
 
 async def handle_newchatmember(update: Update, context: ContextTypes.DEFAULT_TYPE):
